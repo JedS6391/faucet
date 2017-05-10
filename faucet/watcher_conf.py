@@ -1,5 +1,5 @@
 from copy import deepcopy
-from conf import Conf
+from faucet.conf import Conf
 
 class WatcherConf(Conf):
 

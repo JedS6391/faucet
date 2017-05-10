@@ -9,7 +9,7 @@ from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from requests.exceptions import ConnectionError
 from ryu.lib import hub
-from nsodbc import nsodbc_factory, init_switch_db, init_flow_db
+from faucet.nsodbc import nsodbc_factory, init_switch_db, init_flow_db
 
 
 def watcher_factory(conf):

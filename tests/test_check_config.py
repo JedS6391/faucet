@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2015 Brad Cowie, Christopher Lorier and Joe Stringer.
 # Copyright (C) 2015 Research and Innovation Advanced Network New Zealand Ltd.
@@ -17,17 +17,18 @@
 # limitations under the License.
 
 import os
+import sys
 import shutil
 import tempfile
 import unittest
 
+testdir = os.path.dirname(__file__)
+srcdir = '../'
+sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
 
-SRC_DIR = '../faucet'
-
+from faucet.check_faucet_config import check_config
 
 class CheckConfigTestCase(unittest.TestCase):
-
-    CHECK_CONFIG = os.path.join(SRC_DIR, 'check_faucet_config.py')
 
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
@@ -37,14 +38,16 @@ class CheckConfigTestCase(unittest.TestCase):
 
     def run_check_config(self, config):
         conf_file = os.path.join(self.tmpdir, 'faucet.yaml')
-        open(conf_file, 'w').write(config)
-        return os.system('python %s %s' % (self.CHECK_CONFIG, conf_file))
+        with open(conf_file, 'w') as conf:
+            conf.write(config)
+
+        return check_config([conf_file])
 
     def check_config_success(self, config):
-        self.assertEquals(0, self.run_check_config(config))
+        self.assertTrue(self.run_check_config(config))
 
     def check_config_failure(self, config):
-        self.assertNotEquals(0, self.run_check_config(config))
+        self.assertFalse(self.run_check_config(config))
 
     def test_minimal(self):
         minimal_conf = """

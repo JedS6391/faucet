@@ -102,10 +102,8 @@ def is_groupadd(ofmsg):
     Returns:
         bool: True if is a GroupMod add
     """
-    if (is_groupmod(ofmsg) and
-            (ofmsg.command == ofp.OFPGC_ADD)):
-        return True
-    return False
+    return (is_groupmod(ofmsg) and
+            (ofmsg.command == ofp.OFPGC_ADD))
 
 
 def apply_actions(actions):

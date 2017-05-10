@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (C) 2015 Brad Cowie, Christopher Lorier and Joe Stringer.
 # Copyright (C) 2015 Research and Innovation Advanced Network New Zealand Ltd.
@@ -58,13 +58,25 @@ class DistConfigTestCase(unittest.TestCase):
         testconfigv2_includeloop_yaml = os.path.realpath('config/testconfigv2-includeloop.yaml')
 
         with open(testconfigv2_yaml, 'r') as f:
-            self.assertEquals(self.v2_config_hashes[testconfigv2_yaml], hashlib.sha256(f.read()).hexdigest())
+            self.assertEqual(
+                self.v2_config_hashes[testconfigv2_yaml],
+                hashlib.sha256(f.read().encode('utf-8')).hexdigest()
+            )
         with open(testconfigv2_dps_yaml, 'r') as f:
-            self.assertEquals(self.v2_config_hashes[testconfigv2_dps_yaml], hashlib.sha256(f.read()).hexdigest())
+            self.assertEqual(
+                self.v2_config_hashes[testconfigv2_dps_yaml],
+                hashlib.sha256(f.read().encode('utf-8')).hexdigest()
+            )
         with open(testconfigv2_vlans_yaml, 'r') as f:
-            self.assertEquals(self.v2_config_hashes[testconfigv2_vlans_yaml], hashlib.sha256(f.read()).hexdigest())
+            self.assertEqual(
+                self.v2_config_hashes[testconfigv2_vlans_yaml],
+                hashlib.sha256(f.read().encode('utf-8')).hexdigest()
+            )
         with open(testconfigv2_acls_yaml, 'r') as f:
-            self.assertEquals(self.v2_config_hashes[testconfigv2_acls_yaml], hashlib.sha256(f.read()).hexdigest())
+            self.assertEqual(
+                self.v2_config_hashes[testconfigv2_acls_yaml],
+                hashlib.sha256(f.read().encode('utf-8')).hexdigest()
+            )
         # Not loaded due to the include loop.
         self.assertIsNone(self.v2_config_hashes[testconfigv2_includeloop_yaml])
 
@@ -103,8 +115,14 @@ class DistConfigTestCase(unittest.TestCase):
         edge_from_switch_a, edge_from_switch_z = edges
         _, edge_data_a = edge_from_switch_a
         _, edge_data_b = edge_from_switch_z
+
+        # Cast to list fixes issue where the collections weren't registering
+        # as equal even though they were. Assuming this is something internal
+        # to the test framework.
         self.assertEqual(
-            edge_data_a.values(), edge_data_b.values())
+            list(edge_data_a.values()),
+            list(edge_data_b.values())
+        )
 
     def test_port_numbers(self):
         self.assertEqual(set(self.v2_dp.ports.keys()), set([1, 2, 3, 4, 5, 6, 7]))
@@ -140,12 +158,12 @@ class DistConfigTestCase(unittest.TestCase):
             self.assertNotIn(portcafef00d_5, dp.vlans[40].tagged)
             self.assertNotIn(portcafef00d_5, dp.vlans[41].tagged)
             # check get_native_vlan
-            self.assertEquals(dp.get_native_vlan(1), None)
-            self.assertEquals(dp.get_native_vlan(2), dp.vlans[40])
-            self.assertEquals(dp.get_native_vlan(3), dp.vlans[40])
-            self.assertEquals(dp.get_native_vlan(4), dp.vlans[41])
-            self.assertEquals(dp.get_native_vlan(5), dp.vlans[41])
-            self.assertEquals(dp.get_native_vlan(6), None)
+            self.assertEqual(dp.get_native_vlan(1), None)
+            self.assertEqual(dp.get_native_vlan(2), dp.vlans[40])
+            self.assertEqual(dp.get_native_vlan(3), dp.vlans[40])
+            self.assertEqual(dp.get_native_vlan(4), dp.vlans[41])
+            self.assertEqual(dp.get_native_vlan(5), dp.vlans[41])
+            self.assertEqual(dp.get_native_vlan(6), None)
 
     def test_only_one_untagged_vlan_per_port(self):
         for dp in (self.v2_dp,):
@@ -157,7 +175,7 @@ class DistConfigTestCase(unittest.TestCase):
 
     def test_permanent_learn(self):
         for dp in (self.v2_dp,):
-            for port in dp.ports.itervalues():
+            for port in dp.ports.values():
                 if port.number != 5:
                     self.assertFalse(port.permanent_learn)
                 else:
@@ -184,11 +202,11 @@ class DistConfigTestCase(unittest.TestCase):
                 ipaddress.ip_interface(u'10.0.0.253/24'),
                 vlan.faucet_vips
                 )
-            self.assertEquals(vlan.bgp_port, 9179)
-            self.assertEquals(vlan.bgp_as, 1)
-            self.assertEquals(vlan.bgp_routerid, '1.1.1.1')
+            self.assertEqual(vlan.bgp_port, 9179)
+            self.assertEqual(vlan.bgp_as, 1)
+            self.assertEqual(vlan.bgp_routerid, '1.1.1.1')
             self.assertIn('127.0.0.1', vlan.bgp_neighbor_addresses)
-            self.assertEquals(vlan.bgp_neighbor_as, 2)
+            self.assertEqual(vlan.bgp_neighbor_as, 2)
             self.assertIn(
                 ipaddress.ip_network(u'10.0.1.0/24'),
                 vlan.ipv4_routes
@@ -206,7 +224,7 @@ class DistConfigTestCase(unittest.TestCase):
         for dp in (self.v2_dp,):
             self.assertIn(1, dp.port_acl_in)
             self.assertIn(dp.ports[1].acl_in, dp.acls)
-            self.assertEquals(
+            self.assertEqual(
                 dp.acls[dp.ports[1].acl_in].rules[0]['nw_dst'],
                 '172.0.0.0/8')
 
@@ -214,7 +232,7 @@ class DistConfigTestCase(unittest.TestCase):
         for dp in (self.v2_dp,):
             self.assertIn(41, dp.vlan_acl_in)
             self.assertIn(dp.vlans[41].acl_in, dp.acls)
-            self.assertEquals(
+            self.assertEqual(
                 dp.acls[dp.vlans[41].acl_in].rules[0]['nw_dst'],
                 '172.0.0.0/8')
 

@@ -25,9 +25,9 @@ from ryu.lib.packet import arp, icmp, icmpv6, ipv4, ipv6
 from ryu.ofproto import ether
 from ryu.ofproto import inet
 
-import valve_of
-import valve_packet
-from valve_util import btos
+import faucet.valve_of as valve_of
+import faucet.valve_packet as valve_packet
+from faucet.valve_util import btos
 
 
 class AnyVlan(object):

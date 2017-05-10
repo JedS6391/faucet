@@ -24,7 +24,7 @@ from ryu.lib.packet import arp, ethernet, icmp, icmpv6, ipv4, ipv6, packet, vlan
 from ryu.ofproto import ether
 from ryu.ofproto import inet
 
-from valve_util import btos
+from faucet.valve_util import btos
 
 
 def mac_addr_is_unicast(mac_addr):

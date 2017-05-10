@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import valve_of
+import faucet.valve_of as valve_of
 
 # TODO: change this, maybe this can be rewritten easily
 # possibly replace with a class for ACLs

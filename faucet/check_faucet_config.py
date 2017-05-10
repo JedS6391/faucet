@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import logging
 import sys
 
-import valve
-from config_parser import dp_parser
+import faucet.valve as valve
+from faucet.config_parser import dp_parser
 
 
 def check_config(conf_files):

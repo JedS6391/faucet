@@ -14,15 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from acl import ACL
-from dp import DP
-from port import Port
-from vlan import VLAN
-from router import Router
-from watcher_conf import WatcherConf
+from faucet.acl import ACL
+from faucet.dp import DP
+from faucet.port import Port
+from faucet.vlan import VLAN
+from faucet.router import Router
+from faucet.watcher_conf import WatcherConf
 
-import config_parser_util
-
+import faucet.config_parser_util as config_parser_util
 
 def dp_parser(config_file, logname):
     logger = config_parser_util.get_logger(logname)

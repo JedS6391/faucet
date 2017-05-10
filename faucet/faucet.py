@@ -25,11 +25,11 @@ import signal
 
 import ipaddress
 
-from config_parser import dp_parser
-from config_parser_util import config_file_hash
-from valve_util import btos, dpid_log, get_logger, kill_on_exception, get_sys_prefix
-from valve import valve_factory
-import valve_of
+from faucet.config_parser import dp_parser
+from faucet.config_parser_util import config_file_hash
+from faucet.valve_util import btos, dpid_log, get_logger, kill_on_exception, get_sys_prefix
+from faucet.valve import valve_factory
+import faucet.valve_of as valve_of
 
 from prometheus_client import Counter, Gauge, start_http_server
 

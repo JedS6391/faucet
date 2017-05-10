@@ -23,14 +23,14 @@ import os
 
 from collections import namedtuple
 
-import aruba.aruba_pipeline as aruba
-import valve_acl
-import valve_flood
-import valve_host
-import valve_of
-import valve_packet
-import valve_route
-import valve_util
+import faucet.aruba.aruba_pipeline as aruba
+import faucet.valve_acl as valve_acl
+import faucet.valve_flood as valve_flood
+import faucet.valve_host as valve_host
+import faucet.valve_of as valve_of
+import faucet.valve_packet as valve_packet
+import faucet.valve_route as valve_route
+import faucet.valve_util as valve_util
 
 from ryu.lib import mac
 from ryu.ofproto import ether

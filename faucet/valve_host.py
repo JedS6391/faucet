@@ -18,7 +18,7 @@
 import time
 import random
 
-import valve_of
+import faucet.valve_of as valve_of
 
 LEARN_JITTER = 10 # seconds
 

@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from conf import Conf
-from vlan import VLAN
-from port import Port
-from acl import ACL
+from faucet.conf import Conf
+from faucet.vlan import VLAN
+from faucet.port import Port
+from faucet.acl import ACL
 
 import networkx
 

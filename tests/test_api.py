@@ -6,6 +6,10 @@ from ryu.base import app_manager
 from ryu.lib import hub
 from ryu.controller.handler import set_ev_cls
 
+testdir = os.path.dirname(__file__)
+srcdir = '../'
+sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
+
 from faucet.faucet import FaucetAPI, EventFaucetAPIRegistered
 
 class TestFaucetAPI(app_manager.RyuApp):

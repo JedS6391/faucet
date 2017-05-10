@@ -16,8 +16,8 @@
 
 import ipaddress
 
-from conf import Conf
-from valve_util import btos
+from faucet.conf import Conf
+from faucet.valve_util import btos
 
 
 class VLAN(Conf):
