@@ -473,14 +473,14 @@ vlans:
 class FaucetUntaggedTcpIperfTest(FaucetUntaggedTest):
 
     def test_untagged(self):
-       for _ in range(3):
-           self.ping_all_when_learned()
-           first_host, second_host = self.net.hosts[:2]
-           self.verify_iperf_min(
-               ((first_host, self.port_map['port_1']),
-                   (second_host, self.port_map['port_2'])),
-               'TCP', 1)
-           self.flap_all_switch_ports()
+        for _ in range(3):
+            self.ping_all_when_learned()
+            first_host, second_host = self.net.hosts[:2]
+            self.verify_iperf_min(
+                ((first_host, self.port_map['port_1']),
+                 (second_host, self.port_map['port_2'])),
+                'TCP', 1)
+            self.flap_all_switch_ports()
 
 
 class FaucetSanityTest(FaucetUntaggedTest):
@@ -750,7 +750,6 @@ vlans:
                 native_vlan: 100
                 description: "b4"
 """
-
     def test_untagged(self):
         self.net.pingAll()
         learned_hosts = [
@@ -758,6 +757,106 @@ vlans:
         self.assertEquals(2, len(learned_hosts))
         self.assertEquals(2, int(self.scrape_prometheus_var(
             r'vlan_hosts_learned\S+vlan="100"\S+')))
+
+
+class FaucetMaxHostsPortTest(FaucetUntaggedTest):
+
+    MAX_HOSTS = 3
+    CONFIG_GLOBAL = """
+vlans:
+    100:
+        description: "untagged"
+"""
+
+    CONFIG = """
+        interfaces:
+            %(port_1)d:
+                native_vlan: 100
+                description: "b1"
+            %(port_2)d:
+                native_vlan: 100
+                description: "b2"
+                max_hosts: 3
+            %(port_3)d:
+                native_vlan: 100
+                description: "b3"
+            %(port_4)d:
+                native_vlan: 100
+                description: "b4"
+"""
+
+    def test_untagged(self):
+        first_host, second_host = self.net.hosts[:2]
+        self.ping_all_when_learned()
+        for i in range(10, 10+(self.MAX_HOSTS*2)):
+            mac_intf = 'mac%u' % i
+            mac_ipv4 = '10.0.0.%u' % i
+            second_host.cmd('ip link add link %s %s type macvlan' % (
+                second_host.defaultIntf(), mac_intf))
+            second_host.cmd('ip address add %s/24 dev %s' % (
+                mac_ipv4, mac_intf))
+            second_host.cmd('ip link set dev %s up' % mac_intf)
+            second_host.cmd('ping -c1 -I%s %s &' % (mac_intf, first_host.IP()))
+
+        flows = self.get_all_flows_from_dpid(self.dpid)
+        exp_flow = (
+            '"table_id": 3, "match": '
+            '{"dl_vlan": "100", "dl_src": "..:..:..:..:..:..", '
+            '"in_port": %u' % self.port_map['port_2'])
+        macs_learned = 0
+        for flow in flows:
+            if re.search(exp_flow, flow):
+                macs_learned += 1
+        self.assertEquals(self.MAX_HOSTS, macs_learned)
+
+
+class FaucetLearn50MACsOnPortTest(FaucetUntaggedTest):
+
+    MAX_HOSTS = 50
+    CONFIG_GLOBAL = """
+vlans:
+    100:
+        description: "untagged"
+"""
+
+    CONFIG = """
+        interfaces:
+            %(port_1)d:
+                native_vlan: 100
+                description: "b1"
+            %(port_2)d:
+                native_vlan: 100
+                description: "b2"
+            %(port_3)d:
+                native_vlan: 100
+                description: "b3"
+            %(port_4)d:
+                native_vlan: 100
+                description: "b4"
+"""
+
+    def test_untagged(self):
+        first_host, second_host = self.net.hosts[:2]
+        self.ping_all_when_learned()
+        mac_intf_ipv4s = []
+        for i in range(10, 10+self.MAX_HOSTS):
+            mac_intf_ipv4s.append(('mac%u' % i, '10.0.0.%u' % i))
+        # configure macvlan interfaces and stimulate learning
+        for mac_intf, mac_ipv4 in mac_intf_ipv4s:
+            second_host.cmd('ip link add link %s %s type macvlan' % (
+                second_host.defaultIntf(), mac_intf))
+            second_host.cmd('ip address add %s/24 dev %s' % (
+                mac_ipv4, mac_intf))
+            second_host.cmd('ip link set dev %s up' % mac_intf)
+            second_host.cmd('ping -c1 -I%s %s &' % (mac_intf, first_host.IP()))
+        # verify connectivity
+        for mac_intf, _ in mac_intf_ipv4s:
+            self.one_ipv4_ping(
+                second_host, first_host.IP(),
+                require_host_learned=False, intf=mac_intf)
+        # verify FAUCET thinks it learned this many hosts
+        self.assertGreater(int(self.scrape_prometheus_var(
+            r'vlan_hosts_learned\S+vlan="100"\S+')), self.MAX_HOSTS)
 
 
 class FaucetUntaggedHUPTest(FaucetUntaggedTest):
@@ -1373,8 +1472,8 @@ vlans:
         self.start_net()
 
     def test_seperate_untagged_tagged(self):
-        tagged_host_pair = self.net.hosts[0:1]
-        untagged_host_pair = self.net.hosts[2:3]
+        tagged_host_pair = self.net.hosts[:2]
+        untagged_host_pair = self.net.hosts[2:]
         # hosts within VLANs can ping each other
         self.assertEquals(0, self.net.ping(tagged_host_pair))
         self.assertEquals(0, self.net.ping(untagged_host_pair))
@@ -2313,6 +2412,7 @@ class FaucetStringOfDPTest(FaucetTest):
         """Set up Mininet and Faucet for the given topology."""
 
         self.dpids = [str(random.randint(1, 2**32)) for _ in range(n_dps)]
+        self.dpid = self.dpids[0]
         self.CONFIG = self.get_config(
             self.dpids,
             stack,
@@ -2818,7 +2918,8 @@ acls:
             dl_dst: "00:00:00:00:00:02"
             actions:
                 allow: 1
-                dl_dst: "00:00:00:00:00:03"
+                output:
+                    dl_dst: "00:00:00:00:00:03"
         - rule:
             actions:
                 allow: 1

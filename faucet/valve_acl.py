@@ -17,6 +17,23 @@
 
 import faucet.valve_of as valve_of
 
+
+def rewrite_vlan(output_dict):
+    vlan_actions = []
+    if 'pop_vlans' in output_dict:
+        for _ in range(output_dict['pop_vlans']):
+            vlan_actions.append(valve_of.pop_vlan())
+    # if vlan tag is specified, push it.
+    if 'vlan_vid' in output_dict:
+        vlan_actions.extend(
+            valve_of.push_vlan_act(output_dict['vlan_vid']))
+    # or, if a list, push them all (all with type Q).
+    elif 'vlan_vids' in output_dict:
+        for vid in output_dict['vlan_vids']:
+            vlan_actions.extend(valve_of.push_vlan_act(vid))
+    return vlan_actions
+
+
 # TODO: change this, maybe this can be rewritten easily
 # possibly replace with a class for ACLs
 def build_acl_entry(rule_conf, acl_allow_inst, port_num=None, vlan_vid=None):
@@ -38,35 +55,30 @@ def build_acl_entry(rule_conf, acl_allow_inst, port_num=None, vlan_vid=None):
                     valve_of.apply_actions([valve_of.output_port(port_no)]))
                 if not allow_specified:
                     allow = True
-            # if output selected, output packet now and exit pipeline.
             if 'output' in attrib_value:
                 output_dict = attrib_value['output']
                 output_actions = []
+                output_port = None
+                if 'port' in output_dict:
+                    output_port = output_dict['port']
+
                 # if destination rewriting selected, rewrite it.
                 if 'dl_dst' in output_dict:
                     output_actions.append(
                         valve_of.set_eth_dst(output_dict['dl_dst']))
-                if 'pop_vlans' in output_dict:
-                    for _ in range(output_dict['pop_vlans']):
-                        output_actions.append(
-                            valve_of.pop_vlan())
-                # if vlan tag is specified, push it.
-                if 'vlan_vid' in output_dict:
-                    output_actions.extend(
-                        valve_of.push_vlan_act(output_dict['vlan_vid']))
-                # or, if a list, push them all (all with type Q).
-                elif 'vlan_vids' in output_dict:
-                    for vid in output_dict['vlan_vids']:
-                        output_actions.extend(
-                            valve_of.push_vlan_act(vid))
-                # output to port
-                port_no = output_dict['port']
-                output_actions.append(valve_of.output_port(port_no))
-                acl_inst.append(valve_of.apply_actions(output_actions))
-                continue
+                # rewrite any VLAN headers.
+                vlan_actions = rewrite_vlan(output_dict)
+                if vlan_actions:
+                    output_actions.extend(vlan_actions)
+                # output to a port if specified.
+                if output_port is not None:
+                    output_actions.append(valve_of.output_port(output_port))
 
-            if 'dl_dst' in attrib_value:
-                acl_inst.append(valve_of.apply_actions([valve_of.set_eth_dst(attrib_value["dl_dst"])]))
+                acl_inst.append(valve_of.apply_actions(output_actions))
+
+                # if port specified, output packet now and exit pipeline.
+                if output_port is not None:
+                    continue
 
             if allow:
                 acl_inst.append(acl_allow_inst)
